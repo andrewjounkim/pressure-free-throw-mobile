@@ -24,7 +24,7 @@ What surprised me most was how different input is on a phone. On the desktop ver
 
 **Expo SDK:** 58. The project was created with `npx create-expo-app@latest` and no `--template` flag, so it uses the default template (`expo` `~58.0.26`, React Native 0.88.1, Expo Router 58). The tool printed `TODO: paste the exact template line it printed, e.g. default@sdk-58`.
 
-**Tested on:** <DEVICE>
+**Tested on:** iPhone 15 (iOS 26) with Expo Go, on a physical phone.
 
 **You need:**
 - Node.js **22.13 or newer**. Check with `node --version`.
