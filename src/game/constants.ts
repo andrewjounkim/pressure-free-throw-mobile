@@ -57,5 +57,8 @@ export const BALL_SIZE_HANDS = 34;
 export const BALL_SIZE_HOOP = 16;
 export const BALL_ARC_HEIGHT = 120;
 
+/** Highest score we save or accept from storage (a sanity limit, never reached in play). */
+export const MAX_SCORE = 9999;
+
 /** Longest frame step we simulate, so returning from the background never jumps ahead. */
 export const MAX_FRAME_SECONDS = 0.1;

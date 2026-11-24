@@ -4,12 +4,11 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
-import { Ball } from '@/components/game/scene';
+import { Basketball } from '@/components/game/scene';
 import { Palette } from '@/constants/palette';
 import type { Bests } from '@/game/engine';
+import { formatScore } from '@/lib/format';
 import { clearBests, loadBests, NO_BESTS } from '@/lib/score-storage';
-
-const formatScore = (value: number | null) => (value === null ? '—' : String(value));
 
 export default function HomeScreen() {
   const [bests, setBests] = useState<Bests>(NO_BESTS);
@@ -49,7 +48,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <Ball x={44} y={44} size={88} />
+          <Basketball x={44} y={44} size={88} />
         </View>
         <Text style={styles.title} accessibilityRole="header">
           Pressure Free Throw

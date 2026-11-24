@@ -5,6 +5,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { MAX_SCORE } from '@/game/constants';
 import type { Bests } from '@/game/engine';
 
 const KEYS = {
@@ -18,7 +19,7 @@ export const NO_BESTS: Bests = { bestRound1: null, bestFinal: null };
 function parseScore(raw: string | null | undefined): number | null {
   if (raw === null || raw === undefined) return null;
   const value = Number(raw);
-  return Number.isInteger(value) && value >= 0 && value <= 9999 ? value : null;
+  return Number.isInteger(value) && value >= 0 && value <= MAX_SCORE ? value : null;
 }
 
 export async function loadBests(): Promise<{ bests: Bests; failed: boolean }> {
@@ -40,7 +41,7 @@ export async function loadBests(): Promise<{ bests: Bests; failed: boolean }> {
 
 async function saveScore(key: string, value: number): Promise<boolean> {
   try {
-    await AsyncStorage.setItem(key, String(Math.max(0, Math.floor(value))));
+    await AsyncStorage.setItem(key, String(Math.min(MAX_SCORE, Math.max(0, Math.floor(value)))));
     return true;
   } catch (error) {
     console.warn(`Could not save ${key}`, error);

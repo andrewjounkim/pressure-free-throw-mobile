@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { GestureDetector, type LongPressGesture } from 'react-native-gesture-handler';
 
 import { Palette } from '@/constants/palette';
 import type { Rating } from '@/game/engine';
@@ -6,10 +7,13 @@ import type { Rating } from '@/game/engine';
 type ShootControlsProps = {
   s: number;
   meter: { visible: boolean; fill: number; zoneLow: number; zoneHigh: number };
-  canShoot: boolean;
+  /** True while SHOOT is being held. */
+  held: boolean;
+  /** True when a shot can start now (or is being held). False during the cooldown. */
+  available: boolean;
   rating: Rating | null;
-  onPressIn: () => void;
-  onPressOut: () => void;
+  /** Native hold gesture from the game screen, so it can run at the same time as aiming. */
+  gesture: LongPressGesture;
 };
 
 const RATING_COLORS: Record<Rating, string> = {
@@ -19,7 +23,7 @@ const RATING_COLORS: Record<Rating, string> = {
 };
 
 /** Bottom-right SHOOT button with the vertical shot meter above it. */
-export function ShootControls({ s, meter, canShoot, rating, onPressIn, onPressOut }: ShootControlsProps) {
+export function ShootControls({ s, meter, held, available, rating, gesture }: ShootControlsProps) {
   const buttonSize = Math.min(110, 96 * s);
   const meterHeight = 150 * s;
   const meterWidth = 24 * s;
@@ -42,21 +46,22 @@ export function ShootControls({ s, meter, canShoot, rating, onPressIn, onPressOu
           ]}
         />
       </View>
-      <Pressable
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        accessibilityRole="button"
-        accessibilityLabel="Shoot"
-        accessibilityHint="Press and hold, then let go when the meter reaches the green zone"
-        accessibilityState={{ disabled: !canShoot }}
-        style={({ pressed }) => [
-          styles.button,
-          { width: buttonSize, height: buttonSize, borderRadius: buttonSize / 2 },
-          pressed && styles.buttonPressed,
-          !canShoot && !pressed && styles.buttonDisabled,
-        ]}>
-        <Text style={styles.buttonText}>SHOOT</Text>
-      </Pressable>
+      <GestureDetector gesture={gesture}>
+        <View
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Shoot"
+          accessibilityHint="Press and hold, then let go when the meter reaches the green zone"
+          accessibilityState={{ disabled: !available }}
+          style={[
+            styles.button,
+            { width: buttonSize, height: buttonSize, borderRadius: buttonSize / 2 },
+            held && styles.buttonHeld,
+            !available && styles.buttonDisabled,
+          ]}>
+          <Text style={styles.buttonText}>SHOOT</Text>
+        </View>
+      </GestureDetector>
     </View>
   );
 }
@@ -107,7 +112,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
   },
-  buttonPressed: {
+  buttonHeld: {
     backgroundColor: Palette.orangeDark,
     transform: [{ scale: 0.94 }],
   },

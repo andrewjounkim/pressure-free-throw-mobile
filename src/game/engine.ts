@@ -26,8 +26,10 @@ import {
   HAPTIC_HEARTBEAT_BPM,
   HOOP_RANGE,
   HOOP_SPEED,
+  JUMBOTRON_BPM,
   MAKE_CHANCE,
   MAX_FRAME_SECONDS,
+  MAX_SCORE,
   MESSAGE_SHOW_SECONDS,
   METER_FILL_SECONDS,
   METER_OVERHOLD_SECONDS,
@@ -61,6 +63,8 @@ export interface Bests {
 
 export interface GameResult {
   round1: number;
+  /** Set when Round 1 beat (or set the first) saved best; saved only when the game finishes. */
+  newBestRound1: number | null;
   round2: number | null;
   final: number;
   newRecord: boolean;
@@ -95,7 +99,7 @@ export interface Layout {
   aimMax: Point;
 }
 
-interface Ball {
+interface FlyingBall {
   t: number;
   from: Point;
   /** Where an off-target ball flies (fixed at release). */
@@ -120,6 +124,7 @@ export interface GameState {
   phase: Phase;
   round: 1 | 2;
   round1Score: number | null;
+  newBestRound1: number | null;
   timeLeft: number;
   score: number;
   bpm: number;
@@ -132,9 +137,10 @@ export interface GameState {
   hoopDir: 1 | -1;
   charging: boolean;
   chargeTime: number;
-  lastFill: number;
+  /** Meter fill at the last release, so the meter can stay frozen while the rating shows. */
+  releasedFill: number;
   sinceRelease: number;
-  ball: Ball | null;
+  ball: FlyingBall | null;
   rating: { value: Rating; age: number } | null;
   message: { text: string; age: number } | null;
   nextBreakIndex: number;
@@ -181,6 +187,7 @@ export function createGame(layout: Layout, bests: Bests): GameState {
     phase: 'playing',
     round: 1,
     round1Score: null,
+    newBestRound1: null,
     timeLeft: ROUND_SECONDS,
     score: 0,
     bpm: BPM_START,
@@ -193,7 +200,7 @@ export function createGame(layout: Layout, bests: Bests): GameState {
     hoopDir: 1,
     charging: false,
     chargeTime: 0,
-    lastFill: 0,
+    releasedFill: 0,
     sinceRelease: Infinity,
     ball: null,
     rating: null,
@@ -247,7 +254,7 @@ export function reticlePosition(state: GameState): Point {
   const amplitude = Math.max(0, state.bpm - 60) * SWAY_PER_BPM * state.layout.s;
   return {
     x: state.aim.x + amplitude * Math.sin(state.swayPhase),
-    y: state.aim.y + (amplitude / 2) * Math.sin(2 * state.swayPhase),
+    y: state.aim.y + (amplitude / 2) * Math.cos(state.swayPhase),
   };
 }
 
@@ -288,6 +295,12 @@ export function pressShoot(state: GameState): boolean {
   return true;
 }
 
+/** Drop a held shot without firing it (used when the game pauses). */
+export function cancelShot(state: GameState) {
+  state.charging = false;
+  state.chargeTime = 0;
+}
+
 export function releaseShoot(state: GameState): GameEvent[] {
   if (!state.charging) return [];
   return releaseShot(state, false);
@@ -302,7 +315,7 @@ function releaseShot(state: GameState, forcedBad: boolean): GameEvent[] {
   const made = onTarget && Math.random() < MAKE_CHANCE[rating];
 
   state.charging = false;
-  state.lastFill = fill;
+  state.releasedFill = fill;
   state.sinceRelease = 0;
   state.rating = { value: rating, age: 0 };
   state.ball = {
@@ -326,7 +339,6 @@ function startBreak(state: GameState, events: GameEvent[]) {
   state.phase = 'break';
   state.breakPending = false;
   state.nextBreakIndex += 1;
-  state.ball = null;
   state.breathing = { sequence, progress: 0, timeLeft: BREAK_SECONDS };
   events.push({ type: 'breakStart' });
 }
@@ -356,7 +368,7 @@ export function swipe(state: GameState, direction: Direction): GameEvent[] {
 function finishGame(state: GameState, events: GameEvent[]) {
   const round1 = state.round1Score ?? state.score;
   const round2 = state.round === 2 ? state.score : null;
-  const final = round1 + (round2 ?? 0);
+  const final = Math.min(MAX_SCORE, round1 + (round2 ?? 0));
   const previousBest = state.bests.bestFinal;
   const newRecord = previousBest === null ? final > 0 : final > previousBest;
   if (newRecord) state.bests.bestFinal = final;
@@ -364,7 +376,14 @@ function finishGame(state: GameState, events: GameEvent[]) {
   state.charging = false;
   events.push({
     type: 'gameOver',
-    result: { round1, round2, final, newRecord, bestFinal: state.bests.bestFinal },
+    result: {
+      round1,
+      newBestRound1: state.newBestRound1,
+      round2,
+      final,
+      newRecord,
+      bestFinal: state.bests.bestFinal,
+    },
   });
 }
 
@@ -375,6 +394,7 @@ function endRound(state: GameState, events: GameEvent[]) {
     const qualified = best === null || score >= best;
     const newBestRound1 = best === null || score > best ? score : null;
     if (newBestRound1 !== null) state.bests.bestRound1 = newBestRound1;
+    state.newBestRound1 = newBestRound1;
     state.round1Score = score;
     events.push({ type: 'round1End', score, newBestRound1, qualified });
     if (qualified) {
@@ -485,7 +505,8 @@ export function update(state: GameState, dtSeconds: number): GameEvent[] {
     if (!state.breakPending && nextBreakAt !== undefined && state.timeLeft <= nextBreakAt) {
       state.breakPending = true;
     }
-    const shotInProgress = state.charging || (state.ball !== null && !state.ball.resolved);
+    // Wait for the whole shot, including the make/miss animation, before pausing for a break.
+    const shotInProgress = state.charging || state.ball !== null;
     if (state.breakPending && !shotInProgress && state.timeLeft > 0) {
       startBreak(state, events);
       return events;
@@ -493,6 +514,7 @@ export function update(state: GameState, dtSeconds: number): GameEvent[] {
 
     if (state.timeLeft <= 0) {
       state.timeLeft = 0;
+      if (state.charging) state.message = { text: 'Too late!', age: 0 };
       state.charging = false;
       state.breakPending = false;
       state.phase = 'finishing';
@@ -516,6 +538,9 @@ export interface GameView {
   clock: number;
   score: number;
   bpm: number;
+  /** Uses the unrounded BPM so it switches at the same moment as the haptic heartbeat. */
+  jumbotron: boolean;
+  charging: boolean;
   crowdTime: number;
   reticle: Point;
   rim: Point;
@@ -564,14 +589,21 @@ function ballView(state: GameState): GameView['ball'] {
       behindNet: false,
     };
   }
-  return { x: target.x, y: target.y + q * 60 * s, size, opacity: 1 - q, behindNet: false };
+  // Off target: sails past the hoop and bounces away on the floor.
+  return {
+    x: target.x + ball.bounceDir * q * 50 * s,
+    y: target.y - Math.sin(Math.PI * q) * 25 * s + q * 60 * s,
+    size,
+    opacity: 1 - q * 0.7,
+    behindNet: false,
+  };
 }
 
 export function snapshot(state: GameState): GameView {
   const zone = perfectZone(state.bpm);
   const meterFill = state.charging
     ? clamp(state.chargeTime / METER_FILL_SECONDS, 0, 1) * 100
-    : state.lastFill;
+    : state.releasedFill;
   const breathing = state.breathing;
   return {
     layout: state.layout,
@@ -584,6 +616,8 @@ export function snapshot(state: GameState): GameView {
     clock: state.clock,
     score: state.score,
     bpm: Math.round(state.bpm),
+    jumbotron: state.bpm >= JUMBOTRON_BPM,
+    charging: state.charging,
     crowdTime: state.crowdTime,
     reticle: reticlePosition(state),
     rim: rimCenter(state),

@@ -4,6 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { Palette } from '@/constants/palette';
+import { MAX_SCORE } from '@/game/constants';
+import { formatScore } from '@/lib/format';
+import { goHome } from '@/lib/navigation';
 
 type ResultParams = {
   round1?: string;
@@ -17,10 +20,8 @@ type ResultParams = {
 function toScore(value: string | undefined): number | null {
   if (value === undefined || value === '') return null;
   const n = Number(value);
-  return Number.isInteger(n) && n >= 0 ? n : null;
+  return Number.isInteger(n) && n >= 0 && n <= MAX_SCORE ? n : null;
 }
-
-const show = (value: number | null) => (value === null ? '—' : String(value));
 
 export default function ResultsScreen() {
   const params = useLocalSearchParams<ResultParams>();
@@ -29,11 +30,6 @@ export default function ResultsScreen() {
   const final = toScore(params.final);
   const bestFinal = toScore(params.bestFinal);
   const newRecord = params.newRecord === '1';
-
-  function goHome() {
-    if (router.canGoBack()) router.back();
-    else router.replace('/');
-  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -49,15 +45,15 @@ export default function ResultsScreen() {
         )}
 
         <View style={styles.card}>
-          <Row label="Round 1" value={show(round1)} />
+          <Row label="Round 1" value={formatScore(round1)} />
           <Row
             label="Round 2"
-            value={show(round2)}
+            value={formatScore(round2)}
             note={round2 === null ? 'Not reached' : undefined}
           />
           <View style={styles.rule} />
-          <Row label="Final score" value={show(final)} big />
-          <Row label="Best final" value={show(bestFinal)} />
+          <Row label="Final score" value={formatScore(final)} big />
+          <Row label="Best final" value={formatScore(bestFinal)} />
         </View>
 
         <View style={styles.buttons}>

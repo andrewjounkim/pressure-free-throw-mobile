@@ -5,7 +5,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { CrowdShirts, CrowdSkins, Palette } from '@/constants/palette';
-import { JUMBOTRON_BPM, RETICLE_SIZE, RIM_WIDTH } from '@/game/constants';
+import { RETICLE_SIZE, RIM_WIDTH } from '@/game/constants';
 import type { Layout, Point } from '@/game/engine';
 
 const CROWD_ROWS = 3;
@@ -15,15 +15,16 @@ const CROWD_PER_ROW = 12;
 export function Arena({
   layout,
   crowdTime,
-  excited,
+  finalSeconds,
 }: {
   layout: Layout;
   crowdTime: number;
-  excited: boolean;
+  /** The crowd bobs harder in the final seconds. */
+  finalSeconds: boolean;
 }) {
   const { s, width, crowdTop, courtTop, height } = layout;
   const spacing = width / CROWD_PER_ROW;
-  const bobAmount = (excited ? 6 : 3) * s;
+  const bobAmount = (finalSeconds ? 6 : 3) * s;
 
   const fans = [];
   for (let row = 0; row < CROWD_ROWS; row++) {
@@ -88,9 +89,18 @@ export function Arena({
 }
 
 /** The "HALFTIME SHOW" sign, which becomes a BPM jumbotron at 100+ BPM. */
-export function Sign({ layout, bpm, clock }: { layout: Layout; bpm: number; clock: number }) {
+export function Sign({
+  layout,
+  bpm,
+  jumbotron,
+  clock,
+}: {
+  layout: Layout;
+  bpm: number;
+  jumbotron: boolean;
+  clock: number;
+}) {
   const { s, signTop, signHeight, width } = layout;
-  const jumbotron = bpm >= JUMBOTRON_BPM;
   const beat = 1 + 0.08 * Math.max(0, Math.sin(clock * Math.PI * 2 * (bpm / 60)));
   return (
     <View
@@ -167,7 +177,7 @@ export function RimAndNet({ rim, s }: { rim: Point; s: number }) {
 }
 
 /** A basketball centered on (x, y). */
-export function Ball({
+export function Basketball({
   x,
   y,
   size,
@@ -209,7 +219,7 @@ export function Hands({
   const gap = 30 * s;
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {holdingBall && <Ball x={cx} y={cy - 14 * s} size={44 * s} />}
+      {holdingBall && <Basketball x={cx} y={cy - 14 * s} size={44 * s} />}
       {[-1, 1].map((side) => (
         <View
           key={side}

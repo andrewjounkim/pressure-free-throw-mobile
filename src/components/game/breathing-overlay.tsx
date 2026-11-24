@@ -1,11 +1,16 @@
-import { useState } from 'react';
-import { PanResponder, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 
 import { Palette } from '@/constants/palette';
 import { BREAK_SECONDS, SWIPE_MIN_DISTANCE } from '@/game/constants';
 import type { Direction } from '@/game/engine';
 
-const ARROWS: Record<Direction, string> = { left: '←', up: '↑', right: '→', down: '↓' };
+const ARROWS: Record<Direction, string> = {
+  left: '←',
+  up: '↑',
+  right: '→',
+  down: '↓',
+};
 
 type BreathingOverlayProps = {
   s: number;
@@ -16,46 +21,50 @@ type BreathingOverlayProps = {
 };
 
 /** Dimmed full-screen layer for the breathing break. Swipe anywhere to answer. */
-export function BreathingOverlay({ s, sequence, progress, timeLeft, onSwipe }: BreathingOverlayProps) {
-  // Created once; onSwipe comes from the screen and always reads the latest game state.
-  const [responder] = useState(() =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderRelease: (_event, gesture) => {
-        const { dx, dy } = gesture;
-        if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_MIN_DISTANCE * s) return;
-        if (Math.abs(dx) > Math.abs(dy)) onSwipe(dx > 0 ? 'right' : 'left');
-        else onSwipe(dy > 0 ? 'down' : 'up');
-      },
-    }),
-  );
+export function BreathingOverlay({
+  s,
+  sequence,
+  progress,
+  timeLeft,
+  onSwipe,
+}: BreathingOverlayProps) {
+  const swipeGesture = usePanGesture({
+    runOnJS: true,
+    onDeactivate: (event) => {
+      const dx = event.translationX;
+      const dy = event.translationY;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_MIN_DISTANCE * s) return;
+      if (Math.abs(dx) > Math.abs(dy)) onSwipe(dx > 0 ? 'right' : 'left');
+      else onSwipe(dy > 0 ? 'down' : 'up');
+    },
+  });
 
   const timeFraction = Math.max(0, Math.min(1, timeLeft / BREAK_SECONDS));
   return (
-    <View style={[StyleSheet.absoluteFill, styles.overlay]} {...responder.panHandlers}>
-      <Text style={styles.title}>BREATHE</Text>
-      <Text style={styles.subtitle}>Swipe these directions in order</Text>
-      <View style={styles.arrows} accessibilityLabel={`Swipe ${sequence.join(', ')}`}>
-        {sequence.map((direction, index) => (
-          <View
-            key={index}
-            style={[
-              styles.arrowBox,
-              { width: 64 * s, height: 64 * s },
-              index < progress && styles.arrowDone,
-              index === progress && styles.arrowCurrent,
-            ]}>
-            <Text style={[styles.arrow, { fontSize: 36 * s }]}>{ARROWS[direction]}</Text>
-          </View>
-        ))}
+    <GestureDetector gesture={swipeGesture}>
+      <View style={[StyleSheet.absoluteFill, styles.overlay]}>
+        <Text style={styles.title}>BREATHE</Text>
+        <Text style={styles.subtitle}>Swipe these directions in order</Text>
+        <View style={styles.arrows} accessibilityLabel={`Swipe ${sequence.join(', ')}`}>
+          {sequence.map((direction, index) => (
+            <View
+              key={index}
+              style={[
+                styles.arrowBox,
+                { width: 64 * s, height: 64 * s },
+                index < progress && styles.arrowDone,
+                index === progress && styles.arrowCurrent,
+              ]}>
+              <Text style={[styles.arrow, { fontSize: 36 * s }]}>{ARROWS[direction]}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.timerTrack}>
+          <View style={[styles.timerFill, { width: `${timeFraction * 100}%` }]} />
+        </View>
+        <Text style={styles.seconds}>{Math.ceil(timeLeft)}s</Text>
       </View>
-      <View style={styles.timerTrack}>
-        <View style={[styles.timerFill, { width: `${timeFraction * 100}%` }]} />
-      </View>
-      <Text style={styles.seconds}>{Math.ceil(timeLeft)}s</Text>
-    </View>
+    </GestureDetector>
   );
 }
 
