@@ -116,6 +116,22 @@ ok. for all the writing sections and things being uploaded just write it first p
 
 *Since I hadn't chosen which [WARN] items to fix, the agent fixed every [FAIL] plus the [WARN] items that affect gameplay or reliability, and listed the rest under "Review decisions" in the README with a drafted reason for each. Per my professor's permission, the AI also drafted the README sections I'll polish myself.*
 
+```
+it ran it all works
+```
+
+```
+its iphone 15 ios 26 get thr screnshots urself and js make the portfolio card and commit that to my portfolio urself ill do the other stuff later
+```
+
+*The agent couldn't reach my phone and this Mac has no Xcode simulator, so it captured the portfolio screenshots from the app's web preview at iPhone 15 size, and captioned them that way.*
+
+```
+try and fill out all the todos yourself if u cant id get rid of it. dont worry u are allowed to do this
+```
+
+*To confirm the template line for the README, the agent re-ran `npx create-expo-app@latest` in a scratch folder (same `expo ~58.0.26` as my project). It printed `default@sdk-58`.*
+
 ## Manual interventions
 
 <!-- AI draft. Andrew: update after testing on your phone. -->
