@@ -104,9 +104,6 @@ so is it done as per these requirements
 complete everything else for me first and then guide me through setting it up on my phone and then lastly i will film the video
 ```
 
-```
-```
-
 *Since I hadn't chosen which [WARN] items to fix, the agent fixed every [FAIL] plus the [WARN] items that affect gameplay or reliability, and listed the rest under "Review decisions" in the README with a drafted reason for each.*
 
 ```
