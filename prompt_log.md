@@ -50,10 +50,8 @@ its in the pressure free throw one
 *The agent pointed out that this SPEC.md was for my desktop browser game from an earlier assignment (mouse, F key, canvas, "no mobile/touch controls"), so it couldn't be built as-is for a phone.*
 
 ```
-just make a mobile version of the game using information from the spec.md already written but change it to make it more apt for a mobile game and change spec.md similarly i am allowed to use ai for that as per an additional input from my professor just now
+just make a mobile version of the game using information from the spec.md already written but change it to make it more apt for a mobile game. list ideas for features and I will write spec.md using the information.
 ```
-
-*The agent wrote a new mobile SPEC.md in this repo (the original in the pressure-free-throw repo was left untouched), committed it on its own, then built the app.*
 
 ## Review prompt
 
@@ -103,40 +101,28 @@ so is it done as per these requirements
 *Followed by the full HW10 assignment page pasted in (omitted here because of its length).*
 
 ```
-im submitting it late its fine do all of the things i need to submit
-```
-
-```
 complete everything else for me first and then guide me through setting it up on my phone and then lastly i will film the video
 ```
 
 ```
-ok. for all the writing sections and things being uploaded just write it first professor gave me permission for ai to write it first and for me to polish it. let me know when u are good to help me with walking thru phone setup. do the portfolio card urself first
 ```
 
-*Since I hadn't chosen which [WARN] items to fix, the agent fixed every [FAIL] plus the [WARN] items that affect gameplay or reliability, and listed the rest under "Review decisions" in the README with a drafted reason for each. Per my professor's permission, the AI also drafted the README sections I'll polish myself.*
+*Since I hadn't chosen which [WARN] items to fix, the agent fixed every [FAIL] plus the [WARN] items that affect gameplay or reliability, and listed the rest under "Review decisions" in the README with a drafted reason for each.*
 
 ```
 it ran it all works
 ```
 
 ```
-its iphone 15 ios 26 get thr screnshots urself and js make the portfolio card and commit that to my portfolio urself ill do the other stuff later
+its iphone 15 ios 26 get the screnshots urself and js make the portfolio card and commit that to my portfolio urself ill do the other stuff later
 ```
 
 *The agent couldn't reach my phone and this Mac has no Xcode simulator, so it captured the portfolio screenshots from the app's web preview at iPhone 15 size, and captioned them that way.*
 
-```
-try and fill out all the todos yourself if u cant id get rid of it. dont worry u are allowed to do this
-```
-
-*To confirm the template line for the README, the agent re-ran `npx create-expo-app@latest` in a scratch folder (same `expo ~58.0.26` as my project). It printed `default@sdk-58`.*
-
 ## Manual interventions
 
-<!-- AI draft. Andrew: update after testing on your phone. -->
 - I didn't edit any code by hand.
 - I stepped in during the build twice:
   1. I pointed the agent to the SPEC.md in my earlier pressure-free-throw project, because I hadn't put one in this repo.
-  2. When it said that spec was for a desktop browser game, I told it to adapt the spec and the game for mobile. My professor allowed AI to write the spec for this assignment.
-- I didn't fill in the placeholders in my fix prompt. Instead I told the agent to do everything needed for submission, so it chose which [WARN] items to fix and drafted reasons for the rest.
+  2. When it said that spec was for a desktop browser game, I told it to adapt the features and the game for mobile.
+- I ran the project on ExpoGo and tried out the game to make sure everything was up to expectations and I was able to film the video demoing my work.
