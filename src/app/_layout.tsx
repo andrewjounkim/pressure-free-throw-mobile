@@ -1,18 +1,30 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { Palette } from '@/constants/palette';
 
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <>
+      <StatusBar style="light" />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: Palette.navy },
+          headerTintColor: Palette.cream,
+          headerTitleStyle: { fontWeight: '800' },
+          contentStyle: { backgroundColor: Palette.navy },
+        }}>
+        <Stack.Screen name="index" options={{ headerShown: false, title: 'Home' }} />
+        <Stack.Screen name="how-to-play" options={{ title: 'How to Play' }} />
+        <Stack.Screen
+          name="game"
+          options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="results"
+          options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+        />
+      </Stack>
+    </>
   );
 }

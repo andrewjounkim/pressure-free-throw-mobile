@@ -1,98 +1,164 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { AppButton } from '@/components/app-button';
+import { Ball } from '@/components/game/scene';
+import { Palette } from '@/constants/palette';
+import type { Bests } from '@/game/engine';
+import { clearBests, loadBests, NO_BESTS } from '@/lib/score-storage';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+const formatScore = (value: number | null) => (value === null ? '—' : String(value));
 
 export default function HomeScreen() {
+  const [bests, setBests] = useState<Bests>(NO_BESTS);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  // Reload bests every time this screen comes back into view (e.g. after a game).
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      loadBests().then((result) => {
+        if (!active) return;
+        setBests(result.bests);
+        setLoadFailed(result.failed);
+      });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
+
+  function confirmReset() {
+    Alert.alert('Reset best scores?', 'This clears your saved Round 1 and final bests.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        style: 'destructive',
+        onPress: async () => {
+          const ok = await clearBests();
+          if (ok) setBests(NO_BESTS);
+          else Alert.alert('Could not reset', 'Please try again.');
+        },
+      },
+    ]);
+  }
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.hero}>
+          <Ball x={44} y={44} size={88} />
+        </View>
+        <Text style={styles.title} accessibilityRole="header">
+          Pressure Free Throw
+        </Text>
+        <Text style={styles.tagline}>
+          Halftime. One minute. A million dollars on the line. Can you keep your heart rate down?
+        </Text>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>YOUR BESTS</Text>
+          <View style={styles.bestRow}>
+            <View style={styles.best}>
+              <Text style={styles.bestValue}>{formatScore(bests.bestRound1)}</Text>
+              <Text style={styles.bestLabel}>Best Round 1</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.best}>
+              <Text style={styles.bestValue}>{formatScore(bests.bestFinal)}</Text>
+              <Text style={styles.bestLabel}>Best Final</Text>
+            </View>
+          </View>
+          {loadFailed && <Text style={styles.warning}>Couldn&apos;t load saved scores.</Text>}
+        </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <View style={styles.buttons}>
+          <AppButton label="START" onPress={() => router.push('/game')} />
+          <AppButton label="HOW TO PLAY" variant="secondary" onPress={() => router.push('/how-to-play')} />
+          <AppButton label="Reset best scores" variant="text" onPress={confirmReset} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    backgroundColor: Palette.navy,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    gap: 20,
+  },
+  hero: {
+    width: 88,
+    height: 88,
   },
   title: {
+    color: Palette.cream,
+    fontSize: 36,
+    fontWeight: '900',
     textAlign: 'center',
   },
-  code: {
-    textTransform: 'uppercase',
+  tagline: {
+    color: Palette.creamDim,
+    fontSize: 17,
+    lineHeight: 24,
+    textAlign: 'center',
   },
-  stepContainer: {
-    gap: Spacing.three,
+  card: {
     alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    backgroundColor: Palette.navyLight,
+    borderRadius: 16,
+    padding: 18,
+    gap: 12,
+  },
+  cardTitle: {
+    color: Palette.orange,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+  },
+  bestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  best: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  divider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: Palette.creamDim,
+    opacity: 0.4,
+  },
+  bestValue: {
+    color: Palette.cream,
+    fontSize: 36,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  bestLabel: {
+    color: Palette.creamDim,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  warning: {
+    color: Palette.orange,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  buttons: {
+    alignSelf: 'stretch',
+    gap: 12,
   },
 });
